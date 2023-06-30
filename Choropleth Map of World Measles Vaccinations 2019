@@ -1,0 +1,32 @@
+install.packages(c("cartography", "sf", "readxl", "tidyverse", "WDI", "ggthemes", "rnaturalearth", "rnaturalearthdata"))
+library(tidyverse)
+library(cartography)
+library(readxl)
+library(sf)
+library(WDI)
+library(ggthemes)
+library(rnaturalearth)
+library(rnaturalearthdata)
+
+WDIsearch('meas')
+df <- WDI(indicator = "SH.IMM.MEAS", extra = TRUE)
+df_2019 <- df %>%
+  filter(!is.na(SH.IMM.MEAS)) %>%
+  filter(region != "Aggregates") %>%
+  filter(year == 2019) %>%
+  select(country, SH.IMM.MEAS, iso3c)
+world <- ne_countries(scale = "medium", returnclass = "sf")
+world_merged <- left_join(world, df_2019, by = c("iso_a3"="iso3c"))
+mapplot <- ggplot(data = world_merged) + 
+  geom_sf(aes(fill = SH.IMM.MEAS), color = NA, alpha = 0.8) +
+  scale_fill_viridis_c(option = "plasma", na.value="gray90", breaks=seq(0,100,20), limits=c(20,100)) +
+  labs(title = "Fighting Measles with Vaccination",
+       subtitle = "a world map of the share of infants vaccinated against measles",
+       caption = "Source: World Development Indicators, World Bank 2019",
+       fill = "% of infants \nvaccinated against measles") +
+  theme(plot.subtitle=element_text(size=10, color="grey40", lineheight=.9, face="italic"), 
+        plot.caption=element_text(size=7, color="grey40"),
+        legend.title = element_text(size=7, color="grey40")) + 
+  theme_map() 
+mapplot
+
