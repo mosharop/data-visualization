@@ -1,0 +1,31 @@
+install.packages(c("cartography", "sf", "readxl", "tidyverse", "WDI", "ggthemes", "rnaturalearth", "rnaturalearthdata"))
+library(tidyverse)
+library(cartography)
+library(readxl)
+library(sf)
+library(WDI)
+library(ggthemes)
+library(rnaturalearth)
+library(rnaturalearthdata)
+
+WDIsearch('GDP')
+df <- WDI(indicator = "NY.GDP.PCAP.PP.KD", extra = TRUE)
+df_2021 <- df %>%
+  filter(!is.na(NY.GDP.PCAP.PP.KD)) %>%
+  filter(region != "Aggregates") %>%
+  filter(year == 2021) %>%
+  select(country, NY.GDP.PCAP.PP.KD, iso3c)
+world <- ne_countries(scale = "medium", returnclass = "sf")
+world_merged <- left_join(world, df_2021, by = c("iso_a3"="iso3c"))
+mapplot <- ggplot(data = world_merged) + 
+  geom_sf(aes(fill = NY.GDP.PCAP.PP.KD), color = NA, alpha = 0.8) +
+  scale_fill_viridis_c(option = "plasma", na.value="gray90", breaks=seq(300,160000,20000), limits=c(300,160000)) +
+  labs(title = "GDP per Capita",
+       subtitle = "a world map of GDP per capita",
+       caption = "Source: World Development Indicators, World Bank 2021",
+       fill = "GDP per capita") +
+  theme(plot.subtitle=element_text(size=10, color="grey40", lineheight=.9, face="italic"), 
+        plot.caption=element_text(size=7, color="grey40"),
+        legend.title = element_text(size=7, color="grey40")) + 
+  theme_map() 
+mapplot
